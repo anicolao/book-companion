@@ -37,11 +37,28 @@ Book Companion consists of several interconnected components that work together 
 - Track current position (chapter, timestamp)
 - Support multiple audio formats (MP3, M4B, etc.)
 - Provide playback events to other components
+- Manage audio sources (text-to-speech, pre-recorded, Audible integration)
 
 **Key Technologies:**
 - Audio playback libraries (e.g., Web Audio API, ffmpeg)
 - Synchronization with text transcripts (when available)
 - Buffering and streaming for large files
+
+**Audio Source Strategy:**
+
+*V0/MVP Approach:*
+- **Text-to-Speech (TTS) for Audiobook**: Generate audio from Project Gutenberg texts using TTS
+- **Distinct Voice for Reading**: Use Voice A (e.g., neutral, clear narrator voice) for book content
+- **Distinct Voice for AI Companion**: Use Voice B (e.g., conversational, friendly tone) for discussions
+- **Content Source**: Project Gutenberg for copyright-free books
+- **Benefits**: Complete control over content, no licensing issues, easy to sync with text
+
+*Long-term Approach:*
+- **Audible Integration**: Connect to user's Audible account via API
+- **Licensed Audiobooks**: Play professionally narrated content from Audible library
+- **Hybrid Model**: Support both TTS (Project Gutenberg) and Audible sources
+- **User Choice**: Let users select their preferred audiobook provider
+- **Considerations**: DRM compliance, API access negotiation, offline playback
 
 **Interface:**
 ```
@@ -51,6 +68,8 @@ Book Companion consists of several interconnected components that work together 
 - getCurrentPosition()
 - onPlaybackEvent(callback)
 - getChapterInfo()
+- setAudioSource(source: 'tts' | 'audible' | 'local')
+- setVoiceProfile(profile: 'narrator' | 'companion')
 ```
 
 ### 2. Conversation Handler
@@ -104,16 +123,19 @@ Session {
 - Maintain awareness of book context
 - Generate insights and discussion prompts
 - Decide when to initiate conversations
+- Generate companion voice output using distinct TTS voice
 
 **Key Components:**
 - **Context Builder**: Constructs prompts with relevant book content
 - **Response Generator**: Interfaces with LLM API
 - **Quality Filter**: Ensures responses are relevant and appropriate
+- **Voice Synthesizer**: Converts AI responses to speech with companion voice (Voice B)
 
 **Technologies:**
 - OpenAI GPT-4 API (or similar)
 - Langchain or similar orchestration framework
 - Custom prompt templates
+- TTS API (e.g., OpenAI TTS, Google Cloud TTS, ElevenLabs) for companion voice
 
 ### 5. Pause Decision Engine
 
@@ -149,12 +171,27 @@ if score > threshold AND userAllowsAIInitiated:
 - Index searchable content
 - Maintain semantic embeddings for content retrieval
 - Cache frequently accessed information
+- Manage book sources (Project Gutenberg, Audible, etc.)
 
 **Data Storage:**
 - **Metadata DB**: PostgreSQL or similar for structured data
 - **Vector DB**: Pinecone, Weaviate, or Chroma for semantic search
 - **Cache**: Redis for frequently accessed data
-- **Object Storage**: S3 or similar for audio files
+- **Object Storage**: S3 or similar for audio files (TTS-generated, cached)
+- **External Integration**: Audible API integration for licensed content (long-term)
+
+**Book Source Management:**
+
+*V0/MVP:*
+- **Project Gutenberg Catalog**: Import and index public domain books
+- **Text Storage**: Store full text for TTS generation
+- **Generated Audio Cache**: Cache TTS-generated audio segments to avoid regeneration
+
+*Long-term:*
+- **Audible Integration**: OAuth connection to user's Audible account
+- **Library Sync**: Access user's purchased Audible books
+- **Metadata Mapping**: Link Audible books with companion features
+- **Hybrid Catalog**: Unified interface for both free (Gutenberg) and licensed (Audible) content
 
 ## Key Workflows
 
@@ -258,13 +295,15 @@ UI Display + Session History
 - **API Server**: Node.js/Express or Python/FastAPI
 - **Real-time**: WebSockets (Socket.io) or Server-Sent Events
 - **LLM Integration**: OpenAI SDK, Langchain
-- **Task Queue**: BullMQ or Celery for async processing
+- **TTS Integration**: OpenAI TTS API, Google Cloud TTS, or ElevenLabs
+- **Task Queue**: BullMQ or Celery for async processing (TTS generation, caching)
 
 ### Data Layer
 - **Primary DB**: PostgreSQL for user data and metadata
 - **Vector DB**: Pinecone or Weaviate for semantic search
-- **Cache**: Redis for session data
-- **Storage**: S3-compatible for audiobook files
+- **Cache**: Redis for session data and TTS audio segments
+- **Storage**: S3-compatible for generated audio files and book texts
+- **External APIs**: Project Gutenberg API (V0), Audible API (long-term)
 
 ### Infrastructure
 - **Hosting**: Cloud platform (AWS, GCP, Azure)
@@ -313,14 +352,30 @@ UI Display + Session History
 
 ## MVP Scope
 
-For initial prototype, focus on:
+For initial prototype (V0), focus on:
 
-1. **Basic Audio Playback**: Play/pause MP3 files with position tracking
-2. **Simple Chat Interface**: Text-based conversation UI
-3. **Manual Pause Only**: User initiates all conversations
-4. **Basic Context**: Include last 2 minutes of content in LLM prompts
-5. **Single Book**: Support one book at a time per user
-6. **Local Storage**: Simple file-based persistence
+1. **TTS-Based Audio Generation**: 
+   - Generate audiobook narration from Project Gutenberg texts
+   - Use distinct Voice A for book reading (e.g., neural TTS with clear, neutral tone)
+   - Use distinct Voice B for AI companion discussions (e.g., warmer, conversational tone)
+   - Cache generated audio for performance
+
+2. **Project Gutenberg Integration**:
+   - Browse and select from Project Gutenberg catalog
+   - Import book text for TTS generation
+   - No licensing concerns, fully legal and free
+
+3. **Basic Audio Playback**: Play/pause generated audio with position tracking
+
+4. **Simple Chat Interface**: Text-based conversation UI with voice output option
+
+5. **Manual Pause Only**: User initiates all conversations
+
+6. **Basic Context**: Include last 2 minutes of content in LLM prompts
+
+7. **Single Book**: Support one book at a time per user
+
+8. **Local Storage**: Simple file-based persistence
 
 **Deferred to Post-MVP:**
 - AI-initiated pauses
@@ -329,41 +384,94 @@ For initial prototype, focus on:
 - Social features
 - Analytics dashboard
 - Mobile apps
+- **Audible integration** (see Long-term Roadmap below)
 
 ## Development Phases
 
 ### Phase 1: Core Foundation (Weeks 1-4)
 - Set up development environment
-- Implement basic audio player
+- Integrate Project Gutenberg API/catalog
+- Implement TTS with dual voice profiles (narrator Voice A + companion Voice B)
+- Implement basic audio player for TTS-generated content
 - Create simple chat interface
 - Integrate LLM API with basic prompts
 
 ### Phase 2: Context Intelligence (Weeks 5-8)
-- Add transcript/content parsing
-- Implement context building
+- Implement efficient TTS caching strategy
+- Build context builder using book text
 - Enhance prompts with book awareness
 - Add session persistence
+- Optimize voice generation performance
 
 ### Phase 3: Smart Pausing (Weeks 9-12)
 - Build pause decision engine
 - Implement content analysis
 - Create AI-initiated pause UX
 - Fine-tune decision thresholds
+- Refine voice transitions between reading and discussion modes
 
 ### Phase 4: Polish & Test (Weeks 13-16)
 - User testing and feedback
 - Performance optimization
 - Bug fixes and refinement
 - Documentation
+- Prepare architecture for future Audible integration
+
+## Long-term Roadmap: Audible Integration
+
+### Phase 5: Audible Integration (Post-MVP, 6-12 months)
+
+**Objectives:**
+- Allow users to connect their Audible account
+- Play professionally narrated audiobooks from Audible library
+- Maintain AI companion features with commercial content
+
+**Technical Requirements:**
+1. **Audible API Integration**:
+   - Negotiate API access with Audible/Amazon
+   - Implement OAuth authentication for user accounts
+   - Access user's library and playback capabilities
+
+2. **DRM Compliance**:
+   - Respect Audible's DRM and content protection
+   - Implement secure playback within allowed parameters
+   - Ensure AI features don't compromise content security
+
+3. **Audio Synchronization**:
+   - Extract or generate timestamps for Audible content
+   - Sync AI companion with professional narration
+   - Handle chapter markers and navigation
+
+4. **Dual-Source Architecture**:
+   - Unified UI for both Project Gutenberg (TTS) and Audible content
+   - Seamless switching between content sources
+   - User preference management
+
+5. **Transcript Generation**:
+   - Use speech-to-text for Audible content if transcripts unavailable
+   - Build context for AI companion from audio analysis
+   - Cache transcripts for performance
+
+**Challenges:**
+- Audible API availability (may be limited or restricted)
+- DRM constraints on audio manipulation
+- Cost of API access or per-play fees
+- Quality of auto-generated transcripts vs. human-created
+
+**Alternatives if Audible API unavailable:**
+- Partner with other audiobook platforms (Libro.fm, Kobo, etc.)
+- Focus on expanding Project Gutenberg + TTS experience
+- Develop user upload feature for personal audiobook files
 
 ## Open Questions
 
-1. **Content Rights**: How to handle copyrighted audiobook content?
-2. **Transcript Source**: Generate from audio or require existing transcripts?
-3. **LLM Choice**: Single provider or support multiple LLMs?
-4. **Pricing Model**: Freemium, subscription, pay-per-use?
-5. **Platform Priority**: Web-first, mobile-first, or desktop app?
-6. **Integration**: Build standalone or integrate with existing audiobook apps?
+1. **Audible API Access**: Is Audible API available for third-party apps? What are the terms?
+2. **TTS Voice Quality**: Which TTS provider offers best quality and voice variety for V0?
+3. **Voice Customization**: Should users be able to choose narrator and companion voices?
+4. **LLM Choice**: Single provider or support multiple LLMs?
+5. **Pricing Model**: Freemium, subscription, pay-per-use?
+6. **Platform Priority**: Web-first, mobile-first, or desktop app?
+7. **Transcript Caching**: How to efficiently cache and manage TTS audio and transcripts?
 
 ## Next Steps
 

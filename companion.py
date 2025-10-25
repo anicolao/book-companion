@@ -262,9 +262,9 @@ class CompanionApp(App):
         try:
             def on_listening():
                 """Called when actively listening for speech."""
-                self.call_from_thread(
-                    lambda: self.show_message("🎤 Listening... (speak now)")
-                )
+                # Already in app thread (via call_from_thread),
+                # so direct call to show_message
+                self.show_message("🎤 Listening... (speak now)")
 
             question = self.audio_controller.capture_question(
                 timeout=10,

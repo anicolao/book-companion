@@ -26,10 +26,9 @@
         
         # Python environment with required packages
         pythonEnv = pkgs.python3.withPackages (ps: with ps; [
+          textual
           requests
-          pyaudio
-          # Note: gutenbergpy and speech_recognition may need to be installed via pip
-          # if not available in nixpkgs
+          # Note: speech_recognition and pyaudio may need pip install if not in nixpkgs
         ]);
       in {
         devShells.default = pkgs.mkShell {
@@ -37,21 +36,20 @@
             pythonEnv
             git
             ollama
-            # Additional tools for development
-            python3Packages.pip  # For packages not in nixpkgs
+            python3Packages.pip  # For any packages not in nixpkgs
           ];
           
           shellHook = ''
-            echo "Book Companion POC Development Environment"
-            echo "=========================================="
-            echo "Python: $(python --version)"
-            echo "Ollama available: $(which ollama)"
+            echo "Book Companion POC"
+            echo "=================="
             echo ""
-            echo "To get started:"
-            echo "  1. Start Ollama: ollama serve &"
-            echo "  2. Pull a model: ollama pull llama2"
-            echo "  3. Install additional Python deps: pip install gutenbergpy speech_recognition"
-            echo "  4. Run the companion: python companion.py"
+            echo "Setup:"
+            echo "  ollama serve &"
+            echo "  ollama pull llama2"
+            echo "  pip install speech_recognition pyaudio"
+            echo ""
+            echo "Run:"
+            echo "  python companion.py"
           '';
         };
       }

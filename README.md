@@ -72,16 +72,24 @@ python companion.py
 - Terminal-based user interface (TUI) using Textual
 - Reads books from Project Gutenberg (currently: "A Christmas Carol")
 - Text-to-speech narration using macOS `say` command
-- Simple playback controls (play/pause, next/previous paragraph)
+- Continuous playback that auto-advances through paragraphs
+- Wake word detection for voice interaction with AI companion
 - State persistence (remembers your reading position)
 
 **Keyboard Controls:**
-- `p` - Play/Pause
-- `n` - Next paragraph
-- `b` - Previous paragraph
-- `q` - Quit
+- `p` - Play/pause narration
+- `n`/`b` - Skip forward/backward by paragraph
+- `w` - Toggle wake word detection (say "hey companion" to ask questions)
+- `q` - Quit and save position
 
-**Note:** Voice interaction and AI chat features are implemented but require `speech_recognition` and PyAudio to be fully functional. The current POC focuses on the core reading experience.
+**Wake Word Interaction:**
+1. Press `w` to enable wake word detection
+2. Say "hey companion" to pause and trigger interaction
+3. Ask your question about the book
+4. The AI will respond using context from nearby paragraphs
+5. Playback resumes automatically after the response
+
+**Note:** Voice interaction requires `speech_recognition` and PyAudio. Install with `pip install speech_recognition pyaudio`. Ollama must be running for AI responses.
 
 ## Contributing
 

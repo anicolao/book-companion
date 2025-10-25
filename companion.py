@@ -4,6 +4,7 @@ An interactive audiobook companion using Textual TUI framework.
 """
 
 import json
+import threading
 from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal
@@ -66,6 +67,7 @@ class CompanionApp(App):
         ("p", "toggle_play", "Play/Pause"),
         ("n", "next_paragraph", "Next"),
         ("b", "previous_paragraph", "Previous"),
+        ("w", "toggle_wake_word", "Wake Word"),
         ("q", "quit", "Quit"),
     ]
 
@@ -83,6 +85,10 @@ class CompanionApp(App):
         self.paragraphs = []
         self.book_title = ""
         self.state_file = Path("data/state.json")
+
+        # Wake word detection
+        self._wake_word_enabled = False
+        self._wake_word_thread = None
 
         # Load state
         self.load_state()
@@ -175,6 +181,78 @@ class CompanionApp(App):
             if self.is_playing:
                 self.speak_current_paragraph()
 
+    def action_toggle_wake_word(self) -> None:
+        """Toggle wake word detection on/off."""
+        if self._wake_word_enabled:
+            self._stop_wake_word_detection()
+        else:
+            self._start_wake_word_detection()
+
+    def _start_wake_word_detection(self) -> None:
+        """Start listening for wake word in background."""
+        if self._wake_word_enabled:
+            return
+
+        self._wake_word_enabled = True
+        self.show_message("Wake word detection enabled. Say 'hey companion'...")
+
+        def listen_loop():
+            while self._wake_word_enabled:
+                try:
+                    if self.audio_controller.listen_for_wake_word(timeout=2):
+                        # Wake word detected!
+                        self.call_from_thread(self._handle_wake_word)
+                except Exception:
+                    pass  # Continue listening even on errors
+
+        self._wake_word_thread = threading.Thread(target=listen_loop, daemon=True)
+        self._wake_word_thread.start()
+
+    def _stop_wake_word_detection(self) -> None:
+        """Stop wake word detection."""
+        self._wake_word_enabled = False
+        self.show_message("Wake word detection disabled")
+
+    def _handle_wake_word(self) -> None:
+        """Handle wake word detection."""
+        # Pause playback if playing
+        was_playing = self.is_playing
+        if was_playing:
+            self.pause_playback()
+
+        self.show_message("Wake word detected! Listening for your question...")
+
+        # Get question from user
+        try:
+            question = self.audio_controller.capture_question(timeout=10)
+            if question:
+                self.show_message(f"You asked: {question}")
+
+                # Get context and ask AI
+                context = self.chat_bot.get_context_window(
+                    self.paragraphs,
+                    self.current_paragraph_index,
+                    window_size=3
+                )
+
+                response = self.chat_bot.ask_companion(
+                    question,
+                    context,
+                    self.book_title
+                )
+
+                # Speak response
+                self.audio_controller.speak_as_companion(response, blocking=True)
+                self.show_message(f"Companion: {response[:200]}...")
+
+                # Resume playback if it was playing
+                if was_playing:
+                    self.start_playback()
+            else:
+                self.show_message("No question detected")
+        except Exception as e:
+            self.show_message(f"Error: {e}")
+
     def start_playback(self) -> None:
         """Start reading the book."""
         self.is_playing = True
@@ -200,7 +278,7 @@ class CompanionApp(App):
         try:
             # Use callback to continue to next paragraph when done
             self.audio_controller.speak_as_narrator(
-                text, 
+                text,
                 blocking=False,
                 on_complete=self._on_paragraph_complete
             )
@@ -288,6 +366,7 @@ class CompanionApp(App):
 
     def on_unmount(self) -> None:
         """Called when app is unmounted."""
+        self._stop_wake_word_detection()
         self.audio_controller.stop_speaking()
         self.save_state()
 

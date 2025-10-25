@@ -23,7 +23,7 @@ class AudioController:
         self._stop_requested = False
         self._completion_callback = None
 
-    def speak(self, text: str, voice: str = NARRATOR_VOICE, blocking: bool = False, 
+    def speak(self, text: str, voice: str = NARRATOR_VOICE, blocking: bool = False,
               on_complete=None):
         """
         Speak text using macOS say command.

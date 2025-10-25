@@ -101,19 +101,29 @@ class AudioController:
 
         Returns:
             True if wake word detected
-        """
-        try:
-            import speech_recognition as sr
 
-            recognizer = sr.Recognizer()
-            with sr.Microphone() as source:
-                recognizer.adjust_for_ambient_noise(source, duration=0.5)
+        Raises:
+            ImportError: If speech_recognition or pocketsphinx not installed
+            Exception: If microphone access fails
+        """
+        import speech_recognition as sr
+
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            recognizer.adjust_for_ambient_noise(source, duration=0.5)
+            try:
                 audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=3)
                 text = recognizer.recognize_sphinx(audio)
                 return "hey companion" in text.lower() or "companion" in text.lower()
-        except Exception:
-            # Timeout or recognition error
-            return False
+            except sr.WaitTimeoutError:
+                # This is normal - just no speech detected
+                return False
+            except sr.UnknownValueError:
+                # Speech detected but couldn't understand
+                return False
+            except sr.RequestError as e:
+                # Recognition service error
+                raise Exception(f"Speech recognition service error: {e}")
 
     def capture_question(self, timeout: int = 10) -> str:
         """
@@ -124,14 +134,15 @@ class AudioController:
 
         Returns:
             Transcribed text
-        """
-        try:
-            import speech_recognition as sr
 
-            recognizer = sr.Recognizer()
-            with sr.Microphone() as source:
-                recognizer.adjust_for_ambient_noise(source, duration=0.5)
-                audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=10)
-                return recognizer.recognize_sphinx(audio)
-        except Exception as e:
-            raise Exception(f"Failed to capture question: {e}")
+        Raises:
+            ImportError: If speech_recognition not installed
+            Exception: If microphone access or recognition fails
+        """
+        import speech_recognition as sr
+
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            recognizer.adjust_for_ambient_noise(source, duration=0.5)
+            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=10)
+            return recognizer.recognize_sphinx(audio)

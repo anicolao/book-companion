@@ -55,7 +55,7 @@ cd book-companion
 
 # Option 1: Using Nix (recommended)
 nix develop
-pip install speech_recognition pyaudio  # If not in nixpkgs
+pip install SpeechRecognition pocketsphinx PyAudio  # For wake word detection
 
 # Option 2: Using pip directly
 pip install -r requirements.txt
@@ -73,7 +73,7 @@ python companion.py
 - Reads books from Project Gutenberg (currently: "A Christmas Carol")
 - Text-to-speech narration using macOS `say` command
 - Continuous playback that auto-advances through paragraphs
-- Wake word detection for voice interaction with AI companion
+- Wake word detection for voice interaction with AI companion (requires additional setup)
 - State persistence (remembers your reading position)
 
 **Keyboard Controls:**
@@ -83,13 +83,23 @@ python companion.py
 - `q` - Quit and save position
 
 **Wake Word Interaction:**
-1. Press `w` to enable wake word detection
-2. Say "hey companion" to pause and trigger interaction
-3. Ask your question about the book
-4. The AI will respond using context from nearby paragraphs
-5. Playback resumes automatically after the response
 
-**Note:** Voice interaction requires `speech_recognition` and PyAudio. Install with `pip install speech_recognition pyaudio`. Ollama must be running for AI responses.
+*Note: Requires SpeechRecognition and pocketsphinx to be installed*
+
+1. Install dependencies: `pip install SpeechRecognition pocketsphinx PyAudio`
+2. Press `w` to enable wake word detection
+3. Say "hey companion" to pause and trigger interaction
+4. Ask your question about the book
+5. The AI will respond using context from nearby paragraphs
+6. Playback resumes automatically after the response
+
+If wake word detection doesn't work:
+- Make sure you have a working microphone
+- Check that SpeechRecognition and pocketsphinx are installed
+- The app will display error messages in the chat area if there are issues
+- You can still use all other features (TTS playback) without voice input
+
+**Note:** Ollama must be running for AI responses. Install from https://ollama.ai
 
 ## Contributing
 

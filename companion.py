@@ -193,17 +193,48 @@ class CompanionApp(App):
         if self._wake_word_enabled:
             return
 
+        # Test if speech recognition is available
+        try:
+            import speech_recognition as sr
+            # Try to access microphone to test availability
+            sr.Recognizer()
+            with sr.Microphone():
+                pass  # Just test access
+        except ImportError:
+            self.show_message(
+                "ERROR: speech_recognition not installed. "
+                "Run: pip install SpeechRecognition pocketsphinx"
+            )
+            return
+        except Exception as mic_error:
+            self.show_message(f"ERROR: Cannot access microphone: {mic_error}")
+            return
+
         self._wake_word_enabled = True
         self.show_message("Wake word detection enabled. Say 'hey companion'...")
 
         def listen_loop():
+            error_count = 0
             while self._wake_word_enabled:
                 try:
                     if self.audio_controller.listen_for_wake_word(timeout=2):
                         # Wake word detected!
+                        error_count = 0  # Reset error count on success
                         self.call_from_thread(self._handle_wake_word)
-                except Exception:
-                    pass  # Continue listening even on errors
+                except Exception as listen_error:
+                    error_count += 1
+                    if error_count <= 2:  # Show first few errors
+                        err_msg = str(listen_error)
+                        self.call_from_thread(
+                            lambda msg=err_msg: self.show_message(f"Wake word error: {msg}")
+                        )
+                    if error_count > 10:  # Stop after too many errors
+                        self._wake_word_enabled = False
+                        self.call_from_thread(
+                            lambda: self.show_message(
+                                "Wake word detection stopped due to errors"
+                            )
+                        )
 
         self._wake_word_thread = threading.Thread(target=listen_loop, daemon=True)
         self._wake_word_thread.start()

@@ -1,0 +1,151 @@
+"""
+Audio Controller for text-to-speech and speech recognition.
+Uses macOS 'say' command for TTS and speech_recognition for microphone input.
+"""
+
+import subprocess
+import threading
+from typing import Optional
+
+
+# Voice configurations
+NARRATOR_VOICE = "Samantha"
+COMPANION_VOICE = "Alex"
+
+
+class AudioController:
+    """Controls text-to-speech and speech recognition."""
+
+    def __init__(self):
+        """Initialize AudioController."""
+        self.is_speaking = False
+        self.current_process: Optional[subprocess.Popen] = None
+        self._stop_requested = False
+        self._completion_callback = None
+
+    def speak(self, text: str, voice: str = NARRATOR_VOICE, blocking: bool = False,
+              on_complete=None):
+        """
+        Speak text using macOS say command.
+
+        Args:
+            text: Text to speak
+            voice: Voice to use (default: NARRATOR_VOICE)
+            blocking: If True, wait for speech to complete
+            on_complete: Callback function to call when speech completes
+        """
+        if self._stop_requested:
+            self._stop_requested = False
+            return
+
+        self.is_speaking = True
+
+        try:
+            if blocking:
+                subprocess.run(['say', '-v', voice, text], check=True)
+                self.is_speaking = False
+                if on_complete:
+                    on_complete()
+            else:
+                self.current_process = subprocess.Popen(['say', '-v', voice, text])
+
+                # Monitor completion in background
+                def monitor():
+                    if self.current_process:
+                        self.current_process.wait()
+                        self.is_speaking = False
+                        if on_complete and not self._stop_requested:
+                            on_complete()
+
+                thread = threading.Thread(target=monitor, daemon=True)
+                thread.start()
+        except Exception as e:
+            self.is_speaking = False
+            raise Exception(f"Failed to speak: {e}")
+
+    def stop_speaking(self):
+        """Stop current speech."""
+        self._stop_requested = True
+        if self.current_process and self.current_process.poll() is None:
+            self.current_process.terminate()
+            self.current_process.wait()
+        self.is_speaking = False
+
+    def speak_as_narrator(self, text: str, blocking: bool = False, on_complete=None):
+        """
+        Speak text as narrator.
+
+        Args:
+            text: Text to speak
+            blocking: If True, wait for speech to complete
+            on_complete: Callback function to call when speech completes
+        """
+        self.speak(text, NARRATOR_VOICE, blocking, on_complete)
+
+    def speak_as_companion(self, text: str, blocking: bool = False):
+        """
+        Speak text as companion.
+
+        Args:
+            text: Text to speak
+            blocking: If True, wait for speech to complete
+        """
+        self.speak(text, COMPANION_VOICE, blocking)
+
+    def listen_for_wake_word(self, timeout: int = 1) -> bool:
+        """
+        Listen for wake word "hey companion".
+
+        Args:
+            timeout: Seconds to listen
+
+        Returns:
+            True if wake word detected
+
+        Raises:
+            ImportError: If speech_recognition or pocketsphinx not installed
+            Exception: If microphone access fails
+        """
+        import speech_recognition as sr
+
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            recognizer.adjust_for_ambient_noise(source, duration=0.5)
+            try:
+                audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=3)
+                text = recognizer.recognize_sphinx(audio)
+                return "hey companion" in text.lower() or "companion" in text.lower()
+            except sr.WaitTimeoutError:
+                # This is normal - just no speech detected
+                return False
+            except sr.UnknownValueError:
+                # Speech detected but couldn't understand
+                return False
+            except sr.RequestError as e:
+                # Recognition service error
+                raise Exception(f"Speech recognition service error: {e}")
+
+    def capture_question(self, timeout: int = 10, on_listening=None) -> str:
+        """
+        Capture a question from microphone.
+
+        Args:
+            timeout: Maximum seconds to listen
+            on_listening: Optional callback to call when actively listening
+
+        Returns:
+            Transcribed text
+
+        Raises:
+            ImportError: If speech_recognition not installed
+            Exception: If microphone access or recognition fails
+        """
+        import speech_recognition as sr
+
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            recognizer.adjust_for_ambient_noise(source, duration=0.5)
+            if on_listening:
+                on_listening()
+            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=10)
+            return recognizer.recognize_sphinx(audio)

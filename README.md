@@ -32,11 +32,72 @@ Book Companion is an innovative LLM-based application that transforms passive au
 
 ## Project Status
 
-This project is currently in the conceptual/design phase. See [VISION.md](VISION.md) for long-term goals and [DESIGN_SKETCH.md](DESIGN_SKETCH.md) for technical architecture plans.
+🎉 **Mac POC is now available!** A minimal proof-of-concept implementation is ready for macOS users. See [MAC_POC_DESIGN.md](MAC_POC_DESIGN.md) for implementation details.
+
+For long-term vision, see [VISION.md](VISION.md) and [DESIGN_SKETCH.md](DESIGN_SKETCH.md) for full technical architecture plans.
 
 ## Getting Started
 
-*Coming soon - installation and usage instructions will be added as the project develops.*
+### Mac POC (Proof of Concept)
+
+**Prerequisites:**
+- macOS (for `say` command and optimal experience)
+- [Nix with flakes enabled](https://nixos.org/download.html)
+- Ollama for local AI (installed via Nix)
+- (Optional) [direnv](https://direnv.net/) for automatic environment setup
+
+**Quick Start:**
+
+```bash
+# Clone the repository
+git clone https://github.com/anicolao/book-companion.git
+cd book-companion
+
+# Option 1: With direnv (automatic setup)
+direnv allow  # Automatically runs 'nix develop' and pulls llama2 model
+
+# Option 2: Manual setup
+nix develop   # Enter Nix environment with all dependencies
+
+# Start Ollama (if not already running)
+ollama serve &
+
+# Pull llama2 model (if not already downloaded)
+ollama pull llama2
+
+# Run the companion
+python companion.py
+```
+
+**Features:**
+- Terminal-based user interface (TUI) using Textual
+- Reads books from Project Gutenberg (currently: "A Christmas Carol")
+- Text-to-speech narration using macOS `say` command
+- Continuous playback that auto-advances through paragraphs
+- Wake word detection for voice interaction with AI companion
+- State persistence (remembers your reading position)
+
+**Keyboard Controls:**
+- `p` - Play/pause narration
+- `n`/`b` - Skip forward/backward by paragraph
+- `w` - Toggle wake word detection (say "hey companion" to ask questions)
+- `q` - Quit and save position
+
+**Wake Word Interaction:**
+
+1. Press `w` to enable wake word detection
+2. Say "hey companion" to pause and trigger interaction
+3. Ask your question about the book
+4. The AI will respond using context from nearby paragraphs
+5. Playback resumes automatically after the response
+
+If wake word detection doesn't work:
+- Make sure you have a working microphone
+- The app will display error messages in the chat area if there are issues
+- All dependencies are installed via Nix, no additional setup needed
+- You can still use all other features (TTS playback) without voice input
+
+**Note:** Ollama must be running for AI responses.
 
 ## Contributing
 

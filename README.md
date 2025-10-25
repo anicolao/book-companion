@@ -44,6 +44,7 @@ For long-term vision, see [VISION.md](VISION.md) and [DESIGN_SKETCH.md](DESIGN_S
 - macOS (for `say` command and optimal experience)
 - [Nix with flakes enabled](https://nixos.org/download.html)
 - Ollama for local AI (installed via Nix)
+- (Optional) [direnv](https://direnv.net/) for automatic environment setup
 
 **Quick Start:**
 
@@ -52,11 +53,16 @@ For long-term vision, see [VISION.md](VISION.md) and [DESIGN_SKETCH.md](DESIGN_S
 git clone https://github.com/anicolao/book-companion.git
 cd book-companion
 
-# Enter Nix development environment (installs all dependencies)
-nix develop
+# Option 1: With direnv (automatic setup)
+direnv allow  # Automatically runs 'nix develop' and pulls llama2 model
 
-# Start Ollama (in a separate terminal)
+# Option 2: Manual setup
+nix develop   # Enter Nix environment with all dependencies
+
+# Start Ollama (if not already running)
 ollama serve &
+
+# Pull llama2 model (if not already downloaded)
 ollama pull llama2
 
 # Run the companion

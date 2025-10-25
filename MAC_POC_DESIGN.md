@@ -120,6 +120,8 @@ Total external dependencies: ~3-4 lightweight packages
 
 ```
 book_companion_poc/
+├── flake.nix                 # Nix flake for dev environment
+├── flake.lock                # Locked dependencies
 ├── companion.py              # Main application
 ├── book_manager.py           # Book downloading and parsing
 ├── audio_controller.py       # TTS and microphone handling
@@ -128,7 +130,7 @@ book_companion_poc/
 ├── requirements.txt          # Python dependencies
 ├── data/
 │   ├── books/                # Downloaded book texts
-│   │   └── book_12345.txt
+│   │   └── book_46.txt       # A Christmas Carol
 │   └── state.json            # Current session state
 └── README_POC.md             # Setup and usage instructions
 ```
@@ -289,7 +291,7 @@ class BookCompanion:
 
 **Deliverables**:
 1. Working Python script that can:
-   - Download one specific Project Gutenberg book (e.g., "Alice in Wonderland" - Book #11)
+   - Download one specific Project Gutenberg book (e.g., "A Christmas Carol" by Charles Dickens - Book #46)
    - Read the book aloud using macOS `say`
    - Pause when user says "Hey companion"
    - Answer one simple question about the current context
@@ -300,17 +302,17 @@ class BookCompanion:
    $ python companion.py
    Welcome to Book Companion POC!
    
-   Loading "Alice's Adventures in Wonderland"...
+   Loading "A Christmas Carol" by Charles Dickens...
    Press Ctrl+C to quit
    
-   [Reading] Chapter 1, Paragraph 5...
-   "Alice was beginning to get very tired..."
+   [Reading] Stave 1, Paragraph 3...
+   "Marley was dead: to begin with..."
    
    [Wake word detected!]
    Companion: Yes? What would you like to discuss?
    
-   User: Who is Alice?
-   Companion: Alice is the main character, a young girl who...
+   User: Who is Marley?
+   Companion: Marley is Scrooge's deceased business partner...
    
    Companion: Shall we continue reading?
    User: Yes
@@ -365,7 +367,40 @@ class BookCompanion:
 
 ## Installation & Setup
 
-### Prerequisites
+### Development Environment with Nix Flake
+
+This project uses a Nix flake to provide a reproducible development environment with all required dependencies.
+
+**Prerequisites:**
+- macOS
+- [Nix package manager](https://nixos.org/download.html) installed with flakes enabled
+
+**Setup:**
+```bash
+# 1. Clone the repository (if not already done)
+git clone https://github.com/anicolao/book-companion.git
+cd book-companion
+
+# 2. Enter the development environment
+nix develop
+
+# 3. Start Ollama and download model (first time only)
+ollama serve &
+ollama pull llama2  # or phi, mistral - ~4GB download
+
+# 4. Run the companion
+python3 companion.py
+```
+
+The Nix flake automatically provides:
+- Python 3 with all required packages
+- Ollama for local LLM inference
+- Git for version control
+
+### Without Nix (Alternative Setup)
+
+If you prefer not to use Nix:
+
 ```bash
 # 1. Install Homebrew (if not already installed)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -373,12 +408,12 @@ class BookCompanion:
 # 2. Install Ollama
 brew install ollama
 
-# 3. Start Ollama and download model
-ollama serve &
-ollama pull llama2  # or phi, mistral - ~4GB download
-
-# 4. Install Python dependencies
+# 3. Install Python dependencies
 pip3 install -r requirements.txt
+
+# 4. Start Ollama and download model
+ollama serve &
+ollama pull llama2
 ```
 
 ### Requirements.txt
@@ -387,11 +422,6 @@ requests
 speech_recognition
 pyaudio
 gutenbergpy
-```
-
-### Running the POC
-```bash
-python3 companion.py
 ```
 
 ## Constraints & Limitations

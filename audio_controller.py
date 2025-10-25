@@ -21,8 +21,10 @@ class AudioController:
         self.is_speaking = False
         self.current_process: Optional[subprocess.Popen] = None
         self._stop_requested = False
+        self._completion_callback = None
 
-    def speak(self, text: str, voice: str = NARRATOR_VOICE, blocking: bool = False):
+    def speak(self, text: str, voice: str = NARRATOR_VOICE, blocking: bool = False, 
+              on_complete=None):
         """
         Speak text using macOS say command.
 
@@ -30,6 +32,7 @@ class AudioController:
             text: Text to speak
             voice: Voice to use (default: NARRATOR_VOICE)
             blocking: If True, wait for speech to complete
+            on_complete: Callback function to call when speech completes
         """
         if self._stop_requested:
             self._stop_requested = False
@@ -41,6 +44,8 @@ class AudioController:
             if blocking:
                 subprocess.run(['say', '-v', voice, text], check=True)
                 self.is_speaking = False
+                if on_complete:
+                    on_complete()
             else:
                 self.current_process = subprocess.Popen(['say', '-v', voice, text])
 
@@ -49,6 +54,8 @@ class AudioController:
                     if self.current_process:
                         self.current_process.wait()
                         self.is_speaking = False
+                        if on_complete and not self._stop_requested:
+                            on_complete()
 
                 thread = threading.Thread(target=monitor, daemon=True)
                 thread.start()
@@ -64,15 +71,16 @@ class AudioController:
             self.current_process.wait()
         self.is_speaking = False
 
-    def speak_as_narrator(self, text: str, blocking: bool = False):
+    def speak_as_narrator(self, text: str, blocking: bool = False, on_complete=None):
         """
         Speak text as narrator.
 
         Args:
             text: Text to speak
             blocking: If True, wait for speech to complete
+            on_complete: Callback function to call when speech completes
         """
-        self.speak(text, NARRATOR_VOICE, blocking)
+        self.speak(text, NARRATOR_VOICE, blocking, on_complete)
 
     def speak_as_companion(self, text: str, blocking: bool = False):
         """

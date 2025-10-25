@@ -131,6 +131,8 @@ class CompanionApp(App):
             try:
                 self.paragraphs = self.book_manager.download_book(46)
                 self.book_title = self.book_manager.get_book_title(46)
+                # After loading book, load state to get correct position
+                self.load_state()
                 self.refresh_display()
             except Exception as e:
                 self.show_message(f"Error loading book: {e}")
@@ -188,13 +190,31 @@ class CompanionApp(App):
     def speak_current_paragraph(self) -> None:
         """Speak the current paragraph."""
         if not self.paragraphs or self.current_paragraph_index >= len(self.paragraphs):
+            # Reached end of book
+            self.is_playing = False
+            self.update_play_button()
+            self.show_message("Reached end of book")
             return
 
         text = self.paragraphs[self.current_paragraph_index]
         try:
-            self.audio_controller.speak_as_narrator(text, blocking=False)
+            # Use callback to continue to next paragraph when done
+            self.audio_controller.speak_as_narrator(
+                text, 
+                blocking=False,
+                on_complete=self._on_paragraph_complete
+            )
         except Exception as e:
             self.show_message(f"Error speaking: {e}")
+
+    def _on_paragraph_complete(self) -> None:
+        """Called when a paragraph finishes speaking."""
+        if self.is_playing and self.current_paragraph_index < len(self.paragraphs) - 1:
+            # Auto-advance to next paragraph
+            self.current_paragraph_index += 1
+            self.save_state()
+            self.call_from_thread(self.refresh_display)
+            self.call_from_thread(self.speak_current_paragraph)
 
     def update_play_button(self) -> None:
         """Update play button label."""
@@ -245,7 +265,12 @@ class CompanionApp(App):
             try:
                 with open(self.state_file, 'r') as f:
                     state = json.load(f)
-                    self.current_paragraph_index = state.get('current_paragraph', 0)
+                    # Only load if we have paragraphs loaded
+                    if self.paragraphs:
+                        saved_index = state.get('current_paragraph', 0)
+                        # Ensure index is valid
+                        if 0 <= saved_index < len(self.paragraphs):
+                            self.current_paragraph_index = saved_index
             except Exception:
                 pass  # Use defaults if state file is corrupted
 

@@ -58,6 +58,11 @@ class CompanionApp(App):
         min-height: 5;
     }
 
+    #chat-display {
+        width: 100%;
+        content-align: left top;
+    }
+
     Button {
         margin: 0 1;
     }
@@ -251,13 +256,23 @@ class CompanionApp(App):
         if was_playing:
             self.pause_playback()
 
-        self.show_message("Wake word detected! Listening for your question...")
+        self.show_message("🎤 Wake word detected! Listening...")
 
         # Get question from user
         try:
-            question = self.audio_controller.capture_question(timeout=10)
+            def on_listening():
+                """Called when actively listening for speech."""
+                self.call_from_thread(
+                    lambda: self.show_message("🎤 Listening... (speak now)")
+                )
+
+            question = self.audio_controller.capture_question(
+                timeout=10,
+                on_listening=on_listening
+            )
             if question:
-                self.show_message(f"You asked: {question}")
+                # Show the question immediately
+                self.show_message(f"You asked: {question}\n\n💭 Thinking...")
 
                 # Get context and ask AI
                 context = self.chat_bot.get_context_window(
@@ -272,17 +287,22 @@ class CompanionApp(App):
                     self.book_title
                 )
 
-                # Speak response
+                # Display the full response with wrapping
+                self.show_message(
+                    f"You asked: {question}\n\n"
+                    f"🤖 Companion: {response}"
+                )
+
+                # Speak response (blocking so text shows before speech)
                 self.audio_controller.speak_as_companion(response, blocking=True)
-                self.show_message(f"Companion: {response[:200]}...")
 
                 # Resume playback if it was playing
                 if was_playing:
                     self.start_playback()
             else:
-                self.show_message("No question detected")
+                self.show_message("❌ No question detected")
         except Exception as e:
-            self.show_message(f"Error: {e}")
+            self.show_message(f"❌ Error: {e}")
 
     def start_playback(self) -> None:
         """Start reading the book."""

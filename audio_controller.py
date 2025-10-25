@@ -125,12 +125,13 @@ class AudioController:
                 # Recognition service error
                 raise Exception(f"Speech recognition service error: {e}")
 
-    def capture_question(self, timeout: int = 10) -> str:
+    def capture_question(self, timeout: int = 10, on_listening=None) -> str:
         """
         Capture a question from microphone.
 
         Args:
             timeout: Maximum seconds to listen
+            on_listening: Optional callback to call when actively listening
 
         Returns:
             Transcribed text
@@ -144,5 +145,7 @@ class AudioController:
         recognizer = sr.Recognizer()
         with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source, duration=0.5)
+            if on_listening:
+                on_listening()
             audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=10)
             return recognizer.recognize_sphinx(audio)

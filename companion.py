@@ -23,7 +23,7 @@ class CompanionApp(App):
         background: $surface;
     }
 
-    #status-container {
+    #title-container, #book-info-container {
         height: auto;
         background: $panel;
         padding: 1;
@@ -93,12 +93,12 @@ class CompanionApp(App):
 
         yield Container(
             Label("Book Companion - POC v0.1", id="title"),
-            id="status-container"
+            id="title-container"
         )
 
         yield Container(
             Label(self._get_book_info(), id="book-info"),
-            id="status-container"
+            id="book-info-container"
         )
 
         yield Container(

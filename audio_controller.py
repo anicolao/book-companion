@@ -5,7 +5,7 @@ Uses macOS 'say' command for TTS and speech_recognition for microphone input.
 
 import subprocess
 import threading
-from typing import Optional, Callable
+from typing import Optional
 
 
 # Voice configurations
@@ -15,17 +15,17 @@ COMPANION_VOICE = "Alex"
 
 class AudioController:
     """Controls text-to-speech and speech recognition."""
-    
+
     def __init__(self):
         """Initialize AudioController."""
         self.is_speaking = False
         self.current_process: Optional[subprocess.Popen] = None
         self._stop_requested = False
-    
+
     def speak(self, text: str, voice: str = NARRATOR_VOICE, blocking: bool = False):
         """
         Speak text using macOS say command.
-        
+
         Args:
             text: Text to speak
             voice: Voice to use (default: NARRATOR_VOICE)
@@ -34,9 +34,9 @@ class AudioController:
         if self._stop_requested:
             self._stop_requested = False
             return
-        
+
         self.is_speaking = True
-        
+
         try:
             if blocking:
                 subprocess.run(['say', '-v', voice, text], check=True)
@@ -44,17 +44,18 @@ class AudioController:
             else:
                 self.current_process = subprocess.Popen(['say', '-v', voice, text])
                 # Monitor completion in background
+
                 def monitor():
                     if self.current_process:
                         self.current_process.wait()
                         self.is_speaking = False
-                
+
                 thread = threading.Thread(target=monitor, daemon=True)
                 thread.start()
         except Exception as e:
             self.is_speaking = False
             raise Exception(f"Failed to speak: {e}")
-    
+
     def stop_speaking(self):
         """Stop current speech."""
         self._stop_requested = True
@@ -62,40 +63,40 @@ class AudioController:
             self.current_process.terminate()
             self.current_process.wait()
         self.is_speaking = False
-    
+
     def speak_as_narrator(self, text: str, blocking: bool = False):
         """
         Speak text as narrator.
-        
+
         Args:
             text: Text to speak
             blocking: If True, wait for speech to complete
         """
         self.speak(text, NARRATOR_VOICE, blocking)
-    
+
     def speak_as_companion(self, text: str, blocking: bool = False):
         """
         Speak text as companion.
-        
+
         Args:
             text: Text to speak
             blocking: If True, wait for speech to complete
         """
         self.speak(text, COMPANION_VOICE, blocking)
-    
+
     def listen_for_wake_word(self, timeout: int = 1) -> bool:
         """
         Listen for wake word "hey companion".
-        
+
         Args:
             timeout: Seconds to listen
-            
+
         Returns:
             True if wake word detected
         """
         try:
             import speech_recognition as sr
-            
+
             recognizer = sr.Recognizer()
             with sr.Microphone() as source:
                 recognizer.adjust_for_ambient_noise(source, duration=0.5)
@@ -105,20 +106,20 @@ class AudioController:
         except Exception:
             # Timeout or recognition error
             return False
-    
+
     def capture_question(self, timeout: int = 10) -> str:
         """
         Capture a question from microphone.
-        
+
         Args:
             timeout: Maximum seconds to listen
-            
+
         Returns:
             Transcribed text
         """
         try:
             import speech_recognition as sr
-            
+
             recognizer = sr.Recognizer()
             with sr.Microphone() as source:
                 recognizer.adjust_for_ambient_noise(source, duration=0.5)

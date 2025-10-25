@@ -32,11 +32,56 @@ Book Companion is an innovative LLM-based application that transforms passive au
 
 ## Project Status
 
-This project is currently in the conceptual/design phase. See [VISION.md](VISION.md) for long-term goals and [DESIGN_SKETCH.md](DESIGN_SKETCH.md) for technical architecture plans.
+🎉 **Mac POC is now available!** A minimal proof-of-concept implementation is ready for macOS users. See [MAC_POC_DESIGN.md](MAC_POC_DESIGN.md) for implementation details.
+
+For long-term vision, see [VISION.md](VISION.md) and [DESIGN_SKETCH.md](DESIGN_SKETCH.md) for full technical architecture plans.
 
 ## Getting Started
 
-*Coming soon - installation and usage instructions will be added as the project develops.*
+### Mac POC (Proof of Concept)
+
+**Prerequisites:**
+- macOS (for `say` command and optimal experience)
+- Python 3.8 or later
+- [Nix with flakes enabled](https://nixos.org/download.html) (optional but recommended)
+- Ollama installed and running locally
+
+**Quick Start:**
+
+```bash
+# Clone the repository
+git clone https://github.com/anicolao/book-companion.git
+cd book-companion
+
+# Option 1: Using Nix (recommended)
+nix develop
+pip install speech_recognition pyaudio  # If not in nixpkgs
+
+# Option 2: Using pip directly
+pip install -r requirements.txt
+
+# Start Ollama (in a separate terminal)
+ollama serve &
+ollama pull llama2
+
+# Run the companion
+python companion.py
+```
+
+**Features:**
+- Terminal-based user interface (TUI) using Textual
+- Reads books from Project Gutenberg (currently: "A Christmas Carol")
+- Text-to-speech narration using macOS `say` command
+- Simple playback controls (play/pause, next/previous paragraph)
+- State persistence (remembers your reading position)
+
+**Keyboard Controls:**
+- `p` - Play/Pause
+- `n` - Next paragraph
+- `b` - Previous paragraph
+- `q` - Quit
+
+**Note:** Voice interaction and AI chat features are implemented but require `speech_recognition` and PyAudio to be fully functional. The current POC focuses on the core reading experience.
 
 ## Contributing
 

@@ -1,0 +1,4 @@
+textual>=0.40.0
+requests>=2.31.0
+speech_recognition>=3.10.0
+pyaudio>=0.2.13

@@ -203,7 +203,7 @@ class CompanionApp(App):
         except ImportError:
             self.show_message(
                 "ERROR: speech_recognition not installed. "
-                "Run: pip install SpeechRecognition pocketsphinx"
+                "Make sure you're in the Nix environment (nix develop)"
             )
             return
         except Exception as mic_error:

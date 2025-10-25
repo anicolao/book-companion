@@ -1,6 +1,6 @@
 {
   description = "Book Companion POC development environment";
-  
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     systems.url = "github:nix-systems/default";
@@ -23,12 +23,14 @@
             allowUnfree = true;
           };
         };
-        
-        # Python environment with required packages
+
+        # Python environment with all required packages
         pythonEnv = pkgs.python3.withPackages (ps: with ps; [
           textual
           requests
-          # Note: speech_recognition and pyaudio may need pip install if not in nixpkgs
+          speechrecognition
+          pocketsphinx
+          pyaudio
         ]);
       in {
         devShells.default = pkgs.mkShell {
@@ -36,17 +38,17 @@
             pythonEnv
             git
             ollama
-            python3Packages.pip  # For any packages not in nixpkgs
           ];
-          
+
           shellHook = ''
             echo "Book Companion POC"
             echo "=================="
             echo ""
+            echo "All dependencies installed via Nix"
+            echo ""
             echo "Setup:"
             echo "  ollama serve &"
             echo "  ollama pull llama2"
-            echo "  pip install speech_recognition pyaudio"
             echo ""
             echo "Run:"
             echo "  python companion.py"

@@ -42,9 +42,8 @@ For long-term vision, see [VISION.md](VISION.md) and [DESIGN_SKETCH.md](DESIGN_S
 
 **Prerequisites:**
 - macOS (for `say` command and optimal experience)
-- Python 3.8 or later
-- [Nix with flakes enabled](https://nixos.org/download.html) (optional but recommended)
-- Ollama installed and running locally
+- [Nix with flakes enabled](https://nixos.org/download.html)
+- Ollama for local AI (installed via Nix)
 
 **Quick Start:**
 
@@ -53,12 +52,8 @@ For long-term vision, see [VISION.md](VISION.md) and [DESIGN_SKETCH.md](DESIGN_S
 git clone https://github.com/anicolao/book-companion.git
 cd book-companion
 
-# Option 1: Using Nix (recommended)
+# Enter Nix development environment (installs all dependencies)
 nix develop
-pip install SpeechRecognition pocketsphinx PyAudio  # For wake word detection
-
-# Option 2: Using pip directly
-pip install -r requirements.txt
 
 # Start Ollama (in a separate terminal)
 ollama serve &
@@ -73,7 +68,7 @@ python companion.py
 - Reads books from Project Gutenberg (currently: "A Christmas Carol")
 - Text-to-speech narration using macOS `say` command
 - Continuous playback that auto-advances through paragraphs
-- Wake word detection for voice interaction with AI companion (requires additional setup)
+- Wake word detection for voice interaction with AI companion
 - State persistence (remembers your reading position)
 
 **Keyboard Controls:**
@@ -84,22 +79,19 @@ python companion.py
 
 **Wake Word Interaction:**
 
-*Note: Requires SpeechRecognition and pocketsphinx to be installed*
-
-1. Install dependencies: `pip install SpeechRecognition pocketsphinx PyAudio`
-2. Press `w` to enable wake word detection
-3. Say "hey companion" to pause and trigger interaction
-4. Ask your question about the book
-5. The AI will respond using context from nearby paragraphs
-6. Playback resumes automatically after the response
+1. Press `w` to enable wake word detection
+2. Say "hey companion" to pause and trigger interaction
+3. Ask your question about the book
+4. The AI will respond using context from nearby paragraphs
+5. Playback resumes automatically after the response
 
 If wake word detection doesn't work:
 - Make sure you have a working microphone
-- Check that SpeechRecognition and pocketsphinx are installed
 - The app will display error messages in the chat area if there are issues
+- All dependencies are installed via Nix, no additional setup needed
 - You can still use all other features (TTS playback) without voice input
 
-**Note:** Ollama must be running for AI responses. Install from https://ollama.ai
+**Note:** Ollama must be running for AI responses.
 
 ## Contributing
 

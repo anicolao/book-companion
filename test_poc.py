@@ -38,9 +38,10 @@ This is a test paragraph three.
     
     paragraphs = bm.download_book(46)
     assert len(paragraphs) > 0, "Should have loaded paragraphs"
+    # get_book_title returns a hardcoded title for book ID 46
     title = bm.get_book_title(46)
     assert title == "A Christmas Carol", f"Expected 'A Christmas Carol', got '{title}'"
-    
+
     print(f"  ✓ Loaded {len(paragraphs)} paragraphs")
     print(f"  ✓ Book title: {title}")
     return True

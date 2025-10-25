@@ -43,8 +43,8 @@ class AudioController:
                 self.is_speaking = False
             else:
                 self.current_process = subprocess.Popen(['say', '-v', voice, text])
-                # Monitor completion in background
 
+                # Monitor completion in background
                 def monitor():
                     if self.current_process:
                         self.current_process.wait()
